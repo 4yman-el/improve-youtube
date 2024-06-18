@@ -6,10 +6,10 @@
 	"version": "4.940",
 	"default_locale": "en",
 	"icons": {
-		"128": "resources/icons/128.png",
-		"16": "resources/icons/16.png",
-		"32": "resources/icons/32.png",
-		"48": "resources/icons/48.png"
+		"128": "res/icons/128.png",
+		"16": "res/icons/16.png",
+		"32": "res/icons/32.png",
+		"48": "res/icons/48.png"
 	},
 	"background": {
 		"service_worker": "background.js"
@@ -62,9 +62,9 @@
 		"contextMenus",
 		"storage"
 	],
-	"web_accessible_resources": [
+	"web_accessible_res": [
 		{
-			"resources": [
+			"res": [
 				"menu/index.html",
 				"js/web-accessible/core.js",
 				"js/web-accessible/functions.js",
@@ -77,7 +77,7 @@
 				"js/web-accessible/appearance/blocklist.js",
 				"js/web-accessible/appearance/settings.js",
 				"js/web-accessible/init.js",
-				"resources/icons/48.png"
+				"res/icons/48.png"
 			],
 			"matches": [
 				"https://www.youtube.com/*"
