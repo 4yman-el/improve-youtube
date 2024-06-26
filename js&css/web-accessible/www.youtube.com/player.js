@@ -2,27 +2,37 @@
 AUTOPLAY DISABLE
 ------------------------------------------------------------------------------*/
 ImprovedTube.autoplayDisable = function (videoElement) {
+	if (this.storage.player_autoplay_disable
+		|| this.storage.playlist_autoplay === false
+		|| this.storage.channel_trailer_autoplay === false) {
 		const player = this.elements.player || videoElement.closest('.html5-video-player') || videoElement.closest('#movie_player'); // #movie_player: outdated since 2024?
+
 		if (this.video_url !== location.href) {	this.user_interacted = false; }
 
-		// if there is a player && no ads playing && ((it is not in a playlist and auto play is off) OR (playlist auto play is off and in a playlist))
-							//OR (if we are in a channel and the channel trailer autoplay is off)
-		if (player 				
-			&& !player.classList.contains('ad-showing')	// no ads playing
-			&& ( location.href.includes('/watch?')		// video page  // #1703
-					// player_autoplay_disable & not playlist
-				&& ((this.storage.player_autoplay_disable && !location.href.includes('list='))
-					// !playlist_autoplay & playlist
-				 || (this.storage.playlist_autoplay === false && location.href.includes('list='))))	
-					// channel homepage & !channel_trailer_autoplay
-				|| (this.storage.channel_trailer_autoplay === false && this.regex.channel.test(location.href))){ 
+		// if (no user clicks) and (no ads playing) and
+		// ( there is a player and ( (it is not in a playlist and auto play is off ) or ( playlist auto play is off and in a playlist ) ) ) or (if we are in a channel and the channel trailer autoplay is off)  )
 
+				// user didnt click
+		if (player && !this.user_interacted
+				// no ads playing
+			&& !player.classList.contains('ad-showing')
+				// video page
+			&& ((location.href.includes('/watch?')  // #1703
+					// player_autoplay_disable & not playlist
+				&& (this.storage.player_autoplay_disable && !location.href.includes('list='))
+					// !playlist_autoplay & playlist
+				|| (this.storage.playlist_autoplay === false && location.href.includes('list=')))
+					// channel homepage & !channel_trailer_autoplay
+				|| (this.storage.channel_trailer_autoplay === false && this.regex.channel.test(location.href)))) {
 			setTimeout(function() { try { player.pauseVideo(); } 
 									catch (error) { console.log("autoplayDisable: Pausing"); videoElement.pause();  }
 									});
 		} else {
 			document.dispatchEvent(new CustomEvent('it-play'));
 		}
+	} else {
+		document.dispatchEvent(new CustomEvent('it-play'));
+	}
 };
 /*------------------------------------------------------------------------------
 FORCED PLAY VIDEO FROM THE BEGINNING
@@ -123,10 +133,10 @@ console.log("genre: " + DATA.genre + "//title: " +  DATA.title + "//keywords: " 
 	if  ( 		( DATA.genre === 'Music' && (!notMusicRegexMatch || songDurationType === 'veryCommon'))  
 			||  ( musicRegexMatch && !notMusicRegexMatch && (typeof songDurationType !== 'undefined' 
 						|| (/album|Álbum|专辑|專輯|एलबम|البوم|アルバム|альбом|앨범|mixtape|concert|playlist|\b(live|cd|vinyl|lp|ep|compilation|collection|symphony|suite|medley)\b/i.test(DATA.title + " " + keywords) 
-							&& 1150 <= DATA.lengthSeconds && DATA.lengthSeconds <= 5000)) )
+							&& 1000 <= DATA.lengthSeconds )) ) // && 1150 <= DATA.lengthSeconds <= 5000
 			||	( DATA.genre === 'Music' && musicRegexMatch && (typeof songDurationType !== 'undefined'  
 						|| (/album|Álbum|专辑|專輯|एलबम|البوم|アルバム|альбом|앨범|mixtape|concert|playlist|\b(live|cd|vinyl|lp|ep|compilation|collection|symphony|suite|medley)\b/i.test(DATA.title + " " + keywords) 
-							&& 1150 <= DATA.lengthSeconds && DATA.lengthSeconds <= 5000)) )
+							&& 1000 <= DATA.lengthSeconds )) ) // && DATA.lengthSeconds <= 5000
 			||  (amountOfSongs && testSongDuration(DATA.lengthSeconds, amountOfSongs ) !== 'undefined') 				
 		 //	||  location.href.indexOf('music.') !== -1  // (=currently we are only running on www.youtube.com anyways)
 		)	{ player.setPlaybackRate(1); video.playbackRate = 1; console.log ("...,thus must be music?"); }		 				
@@ -172,14 +182,14 @@ DATA.videoID = ImprovedTube.videoId() || false;
 						} catch (error) { console.error('Error: fetching from https://Youtube.com/watch?v=${DATA.videoID}', error);   keywords = '';  }
 						})();
 						}							
-  };				
+	};
 if ( (history && history.length === 1) || !history?.state?.endpoint?.watchEndpoint) { ImprovedTube.fetchDOMData();}  
 else {   
 //Invidious instances. Should be updated automatically!... 
-const invidiousInstances = ['iv.datura.network', 'vid.puffyan.us', 'iv.melmac.space', 'inv.in.projectsegfau.lt', 'invidious.asir.dev', 'inv.zzls.xyz', 'invidious.io.lol', 'onion.tube', 'yewtu.be', 'invidious.protokolla.fi', 'inv.citw.lgbt', 'anontube.lvkaszus.pl', 'iv.nboeck.de', 'invidious.no-logs.com', 'vid.priv.au', 'yt.cdaut.de', 'invidious.slipfox.xyz', 'yt.artemislena.eu', 'invidious.drgns.space', 'invidious.einfachzocken.eu', 'invidious.projectsegfau.lt', 'invidious.nerdvpn.de', 'invidious.private.coffee', 'invidious.lunar.icu', 'invidious.privacydev.net', 'invidious.fdn.fr', 'yt.oelrichsgarcia.de', 'iv.ggtyler.dev', 'inv.tux.pizza', 'yt.drgnz.club', 'inv.us.projectsegfau.lt'];
+const invidiousInstances = ['invidious.fdn.fr','inv.tux.pizza','invidious.flokinet.to','invidious.protokolla.fi','invidious.private.coffee','yt.artemislena.eu','invidious.perennialte.ch','invidious.materialio.us','iv.datura.network'];
 function getRandomInvidiousInstance() { return invidiousInstances[Math.floor(Math.random() * invidiousInstances.length)];}
 
-(async function () {	 let retries = 5;	let invidiousFetched = false;
+(async function () {	 let retries = 4;	let invidiousFetched = false;
 	async function fetchInvidiousData() { 
 		try {const response = await fetch(`https://${getRandomInvidiousInstance()}/api/v1/videos/${DATA.videoID}?fields=genre,title,lengthSeconds,keywords`);
 			 DATA = await response.json(); 
@@ -188,7 +198,7 @@ function getRandomInvidiousInstance() { return invidiousInstances[Math.floor(Mat
 		} catch (error) { console.error('Error: Invidious API: ', error);  }
 	}
 	while (retries > 0 && !invidiousFetched) {  await fetchInvidiousData();
-		if (!invidiousFetched) { await new Promise(resolve => setTimeout(resolve, retries === 5 ? 1234 : 432));  retries--; }	}
+		if (!invidiousFetched) { await new Promise(resolve => setTimeout(resolve, retries === 4 ? 1500 : 876));  retries--; }	}
 	if(!invidiousFetched){ if (document.readyState === 'loading') {document.addEventListener('DOMContentLoaded', ImprovedTube.fetchDOMData())} 
 							else { ImprovedTube.fetchDOMData();} }  
 })();
@@ -202,7 +212,7 @@ SUBTITLES
 ------------------------------------------------------------------------------*/
 ImprovedTube.playerSubtitles = function () {
 	const player = this.elements.player;
-	
+
 	if (player && player.isSubtitlesOn && player.toggleSubtitles && player.toggleSubtitlesOn) {
 		switch(this.storage.player_subtitles) {
 			case true:
@@ -221,13 +231,11 @@ SUBTITLES LANGUAGE
 ------------------------------------------------------------------------------*/
 ImprovedTube.subtitlesLanguage = function () {
 	const option = this.storage.subtitles_language,
-		player = this.elements.player,
-		button = this.elements.player_subtitles_button;
+		player = this.elements.player;
 	let subtitlesState;
 
-	if (option && player && player.getOption && player.isSubtitlesOn && player.toggleSubtitles && button && !button.title.includes('unavailable')) {
-		const tracklists = player.getOption('captions', 'tracklist', {includeAsr: true}),
-			matchedTrack = tracklists.find(element => element.languageCode.includes(option) && (!element.vss_id.includes("a.") || this.storage.auto_generate));
+	if (option && player && player.getOption && player.setOption && player.isSubtitlesOn && player.toggleSubtitles) {
+		const matchedTrack = player.getOption('captions', 'tracklist', {includeAsr: true})?.find(track => track.languageCode.includes(option) && (!track.vss_id.includes("a.") || this.storage.auto_generate));
 
 		if (matchedTrack) {
 			subtitlesState = player.isSubtitlesOn();
@@ -260,40 +268,55 @@ default = {
 },
 ------------------------------------------------------------------------------*/
 ImprovedTube.subtitlesUserSettings = function () {
-	const ourSettings = [
-			['fontFamily', 'number', this.storage.subtitles_font_family],
-			['color', 'color', this.storage.subtitles_font_color],
-			['fontSizeIncrement', 'number', this.storage.subtitles_font_size],
-			['background', 'color', this.storage.subtitles_background_color],
-			['backgroundOpacity', 'fraction', this.storage.subtitles_background_opacity],
-			['windowColor', 'color', this.storage.subtitles_window_color],
-			['windowOpacity', 'fraction', this.storage.subtitles_window_opacity],
-			['charEdgeStyle', 'number', this.storage.subtitles_character_edge_style],
-			['textOpacity', 'fraction', this.storage.subtitles_font_opacity]
-		],
-		option = ourSettings.filter(element => element[2]),
-		player = this.elements.player,
-		button = this.elements.player_subtitles_button;
+	const ourSettings = {
+			fontFamily: this.storage.subtitles_font_family,
+			color: this.storage.subtitles_font_color,
+			fontSizeIncrement: this.storage.subtitles_font_size,
+			background: this.storage.subtitles_background_color,
+			backgroundOpacity: this.storage.subtitles_background_opacity,
+			windowColor: this.storage.subtitles_window_color,
+			windowOpacity: this.storage.subtitles_window_opacity,
+			charEdgeStyle: this.storage.subtitles_character_edge_style,
+			textOpacity: this.storage.subtitles_font_opacity
+		},
+		userSettings = Object.keys(ourSettings).filter(e => ourSettings[e]),
+		player = this.elements.player;
 
-	if (option.length && player.getSubtitlesUserSettings && button && !button.title.includes('unavailable')) {
-		let settings = player.getSubtitlesUserSettings();
-		
-		for (const value of option) {
-			switch(value[1]) {
-				case 'number':
-					settings[value[0]] = Number(value[2]);
+	if (userSettings.length && player && player.getSubtitlesUserSettings && player.updateSubtitlesUserSettings) {
+		let ytSettings = player.getSubtitlesUserSettings(),
+			setting;
+	
+	if (!ytSettings) return; //null SubtitlesUserSettings seem to mean subtitles not available
+
+		for (const value of userSettings) {
+			setting = null;
+			switch(value) {
+				case 'fontFamily':
+				case 'fontSizeIncrement':
+				case 'charEdgeStyle':
+					setting = Number(ourSettings[value]);
 					break;
 
 				case 'color':
-					settings[value[0]] = value[2];
+				case 'background':
+				case 'windowColor':
+					setting = ourSettings[value];
 					break;
 
-				case 'fraction':
-					settings[value[0]] = Number(option) / 100;
+				case 'backgroundOpacity':
+				case 'windowOpacity':
+				case 'textOpacity':
+					setting = Number(ourSettings[value]) / 100;
 					break;
 			}
+			
+			if (ytSettings?.hasOwnProperty(value)) {
+				ytSettings[value] = setting;
+			} else {
+				console.error('subtitlesUserSettings failed at: ', value, setting);
+			}
 		}
-		player.updateSubtitlesUserSettings(settings);
+		player.updateSubtitlesUserSettings(ytSettings);
 	}
 };
 /*------------------------------------------------------------------------------
@@ -301,14 +324,13 @@ SUBTITLES DISABLE SUBTILES FOR LYRICS
 ------------------------------------------------------------------------------*/
 ImprovedTube.subtitlesDisableLyrics = function () {
 	if (this.storage.subtitles_disable_lyrics) {
-		var player = this.elements.player,
-			button = this.elements.player_subtitles_button;
+		const player = this.elements.player;
 
-		if (player && player.toggleSubtitles && button && !button.title.includes('unavailable')) {
+		if (player && player.isSubtitlesOn && player.isSubtitlesOn() && player.toggleSubtitles) {
 			// Music detection only uses 3 identifiers for Lyrics: lyrics, sing-along, karaoke.
 			// Easier to simply use those here. Can replace with music detection later.
 			const terms = ["sing along", "sing-along", "karaoke", "lyric", "卡拉OK", "卡拉OK", "الكاريوكي", "караоке", "カラオケ","노래방"];
-			if (terms.some(term => ImprovedTube.videoTitle().toLowerCase().includes(term))) {			
+			if (terms.some(term => this.videoTitle().toLowerCase().includes(term))) {			
 				player.toggleSubtitles();
 			}									
 		}
